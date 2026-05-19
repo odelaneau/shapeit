@@ -40,7 +40,7 @@ SHAPEIT5 phases common variants using the **phase_common** tool, which has been 
 
 There are different strategies to phase common variants. The first, is to phase the whole chromosome in a single job. This is feasible for SNP array data, but it is usually not optimal for WGS data. Therefore we recommend to chunk the chromosome into large chunks (e.g. 20 cM) if using large WGS data. Of note, we provinde 20cM chunks for the b38 built in the resource folder. The chunking used in this tutorial is under optimal for real data, such as the UK Biobank dataset. For that please refer to the UKB tutorials for more advanced examples.
 
-Before starting this tutorial, be sure to clone the SHAPEIT5 github and compile SHAPEIT5 (documentation [here](https://odelaneau.github.io/shapeit5/docs/installation/build_from_source/compile_shapeit5), and to navigate in the main shapeit5 folder. In that folder, you should see at the following folders:
+Before starting this tutorial, be sure to clone the SHAPEIT5 github and compile SHAPEIT5 (documentation [here](https://odelaneau.github.io/shapeit/docs/installation/build_from_source/compile_shapeit5), and to navigate in the main shapeit5 folder. In that folder, you should see at the following folders:
 
 <div class="code-example" markdown="1">
 ```bash

@@ -20,7 +20,7 @@ permalink: /docs/installation/build_from_source/compile_shapeit5
 Download the last version of the SHAPEIT5 code using:
 <div class="code-example" markdown="1">
 ```bash
-git clone --recurse-submodules https://github.com/odelaneau/shapeit5.git
+git clone --recurse-submodules https://github.com/odelaneau/shapeit.git
 ```
 </div>
 

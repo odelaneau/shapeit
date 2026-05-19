@@ -7,7 +7,7 @@ permalink: /
 
 ---
 
-![alt text](https://github.com/odelaneau/shapeit5/blob/main/docs/assets/images/branding/shapeit5_logo.png?raw=true)
+![alt text](https://github.com/odelaneau/shapeit/blob/main/docs/assets/images/branding/shapeit5_logo.png?raw=true)
 
 <!---
 # SHAPEIT5
@@ -29,7 +29,7 @@ SHAPEIT5 is a software package to estimate haplotypes in large genotype datasets
 
 {: .new }
 > **Version `5.1.0` is now available!**
-> See [the CHANGELOG](https://github.com/odelaneau/shapeit5/blob/main/docs/CHANGELOG.md) for details.
+> See [the CHANGELOG](https://github.com/odelaneau/shapeit/blob/main/docs/CHANGELOG.md) for details.
 
 
 ## Citation
@@ -41,7 +41,7 @@ Hofmeister RJ, Ribeiro DM, Rubinacci S., Delaneau O. [Accurate rare variant phas
 ---
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 .mx-auto }
-[View source code on GitHub](https://github.com/odelaneau/shapeit5){: .btn .fs-5 .mb-4 .mb-md-0 }
+[View source code on GitHub](https://github.com/odelaneau/shapeit){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 
 ## Description
@@ -75,7 +75,7 @@ SHAPEIT5 is developed by [Olivier Delaneau's group](https://odelaneau.github.io/
 
 ### License
 
-SHAPEIT5 is distributed with [MIT license](https://github.com/odelaneau/shapeit5/blob/main/LICENSE).
+SHAPEIT5 is distributed with [MIT license](https://github.com/odelaneau/shapeit/blob/main/LICENSE).
 
 ### Organisations
 

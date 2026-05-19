@@ -41,7 +41,7 @@ SHAPEIT5 is a two-step approach that treats each chromosome independently and wo
 
 In addition to what has been described in the previous tutorials (i.e phasing UKB WES and UKB WES - interim 150k release), this new pipeline include two novelties:
 
-- **family phasing** : we leveraged the cryptic relatedness of the UK Biobank data to phase offspring from parental genome. This is applied chromosome-wide, but also genome-wide. It means that across all chromosomes, the first haplotypes are always inherited from the first parent listed in the pedigree file. See the [documentation](https://odelaneau.github.io/shapeit5/docs/documentation/phase_common/#usage2-phasing-related-samples) for more informations.
+- **family phasing** : we leveraged the cryptic relatedness of the UK Biobank data to phase offspring from parental genome. This is applied chromosome-wide, but also genome-wide. It means that across all chromosomes, the first haplotypes are always inherited from the first parent listed in the pedigree file. See the [documentation](https://odelaneau.github.io/shapeit/docs/documentation/phase_common/#usage2-phasing-related-samples) for more informations.
 - **variable ploidy** : Phasing process accounts for haploidy of males on chromosome X.
 
 <br>
@@ -62,7 +62,7 @@ We perform quality control of the variant sites and filtered out SNPs and indels
 
 The following code was used to run the QC on all UK Biobank WGS chunks.
 
-The data is initially provided in more than 60k chunks. We first grouped these chunks in ~100 batches per chromosomes. This allows us to run an entire chromosome QC in a hundred jobs in parallel on the UK Biobank RAP. Whitin each of these 100 jobs, we used the xargs command to parallelize 8 jobs at the same time. This code is provided below. It relies on (i) a QC script (can be found below or [here](https://github.com/odelaneau/shapeit5/tree/main/tasks/phasingUKB_200k_release/autosomes)), (ii) QC chunks (can be found [here](https://github.com/odelaneau/shapeit5/tree/main/tasks/phasingUKB_200k_release/autosomes)).
+The data is initially provided in more than 60k chunks. We first grouped these chunks in ~100 batches per chromosomes. This allows us to run an entire chromosome QC in a hundred jobs in parallel on the UK Biobank RAP. Whitin each of these 100 jobs, we used the xargs command to parallelize 8 jobs at the same time. This code is provided below. It relies on (i) a QC script (can be found below or [here](https://github.com/odelaneau/shapeit/tree/main/tasks/phasingUKB_200k_release/autosomes)), (ii) QC chunks (can be found [here](https://github.com/odelaneau/shapeit/tree/main/tasks/phasingUKB_200k_release/autosomes)).
 
 
 <div class="code-example" markdown="1">
@@ -128,7 +128,7 @@ done
 </div>
 <br>
 
-The following code corresponds to the script named `script_stats_qc.sh` above. Can also be found [here](https://github.com/odelaneau/shapeit5/tree/main/tasks/phasingUKB_200k_release/autosomes).
+The following code corresponds to the script named `script_stats_qc.sh` above. Can also be found [here](https://github.com/odelaneau/shapeit/tree/main/tasks/phasingUKB_200k_release/autosomes).
 
 <div class="code-example" markdown="1">
 ```bash
@@ -163,12 +163,12 @@ SHAPEIT5 phases common variants using the SHAPEIT5_phase_common tool. As an inpu
 #### Phasing common variants in chunks
 When using WGS data on large sample size, it is good practice to run **SHAPEIT5_phase_common** in different large regions of the chromosomes (e.g. 20cM). In the following, we perform phasing in chunks with overlapping regions that are large enough to have a good amount of heterozygous sites for the ligation step (i.e, assembling all chunks together).
 
-The chunks can be found [here](https://github.com/odelaneau/shapeit5/tree/main/tasks/phasingUKB_200k_release/autosomes).
+The chunks can be found [here](https://github.com/odelaneau/shapeit/tree/main/tasks/phasingUKB_200k_release/autosomes).
 
-We used the option `--pedigree` to leverage family information (i.e parent-offspring duos and trios) in the phasing process. See the [documentation](https://odelaneau.github.io/shapeit5/docs/documentation/phase_common/#usage2-phasing-related-samples) for more informations.
+We used the option `--pedigree` to leverage family information (i.e parent-offspring duos and trios) in the phasing process. See the [documentation](https://odelaneau.github.io/shapeit/docs/documentation/phase_common/#usage2-phasing-related-samples) for more informations.
 
 
-**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5.ukb200k.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit5/docs/installation/docker)
+**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5.ukb200k.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit/docs/installation/docker)
 
 
 <div class="code-example" markdown="1">
@@ -337,7 +337,7 @@ done
 ```
 </div>	
 
-The full list of options for the **SHAPEIT5_phase_rare** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/phase_rare/).
+The full list of options for the **SHAPEIT5_phase_rare** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/phase_rare/).
 
 <br>
 
@@ -436,7 +436,7 @@ done
 </div>
 <br>
 
-The following code corresponds to the script named `script_stats_qc.sh` above. Can also be found [here](https://github.com/odelaneau/shapeit5/tree/main/tasks/phasingUKB_200k_release/chrX).
+The following code corresponds to the script named `script_stats_qc.sh` above. Can also be found [here](https://github.com/odelaneau/shapeit/tree/main/tasks/phasingUKB_200k_release/chrX).
 
 <div class="code-example" markdown="1">
 ```bash
@@ -642,7 +642,7 @@ done
 ```
 </div>	
 
-The full list of options for the **SHAPEIT5_phase_rare** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/phase_rare/).
+The full list of options for the **SHAPEIT5_phase_rare** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/phase_rare/).
 
 <br>
 

@@ -8,7 +8,7 @@ layout: default
 All notable changes to this project are documented in this file.
 
 {: .highlight }
-Version 5.1.1 is now available [here] (https://github.com/odelaneau/shapeit5/releases) as docker image or static binaries. 
+Version 5.1.1 is now available [here] (https://github.com/odelaneau/shapeit/releases) as docker image or static binaries. 
 
 
 ## v5.1.1

@@ -35,7 +35,7 @@ SHAPEIT5 is a two-step approach that treats each chromosome independently and wo
 <br>
 If you want to phase the UK Biobank WGS data on the Research Analysis Platform (RAP) DNAnexus, you can directly use the pipeline provided in the github.
 
-Clone the github repository using `git clone https://github.com/odelaneau/shapeit5.git` and navigate to the dedicated folder with `cd shapeit5/tasks/phasingUKB_WGS_Official_release`.
+Clone the github repository using `git clone https://github.com/odelaneau/shapeit.git` and navigate to the dedicated folder with `cd shapeit5/tasks/phasingUKB_WGS_Official_release`.
 
 You will find the following scripts to perform the phasing on the UK Biobank WGS data:
 
@@ -130,7 +130,7 @@ When using WGS data on large sample size, it is good practice to run **SHAPEIT5_
 The chunks can be found here (link available soon).
 
 
-**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5_beta.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit5/docs/installation/docker)
+**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5_beta.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit/docs/installation/docker)
 
 
 <div class="code-example" markdown="1">
@@ -183,7 +183,7 @@ done
 ```
 </div>
 
-The full list of options for the **SHAPEIT5_phase_common** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/phase_common/).
+The full list of options for the **SHAPEIT5_phase_common** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/phase_common/).
 
 
 One advantage of this approach is that these two chunks can run in parallel and they require less computational resources than the single job. However, as we wish to perform phasing at rare variants using a haplotype scaffold, we need to ligate these chunks to create a single file for the entire region.
@@ -263,7 +263,7 @@ done
 ```
 </div>	
 
-The full list of options for the **SHAPEIT5_phase_rare** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/phase_rare/).
+The full list of options for the **SHAPEIT5_phase_rare** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/phase_rare/).
 
 <br>
 
@@ -340,7 +340,7 @@ done
 </div>
 
 
-The full list of options for the **SHAPEIT5_switch** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/switch/).
+The full list of options for the **SHAPEIT5_switch** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/switch/).
 
 
 

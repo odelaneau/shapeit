@@ -73,14 +73,14 @@ done
 To match the UKB SNP array data (hg19) to the UKB sequencing data (hg38), we lift over the UKB SNP array data from hg19 to hg38. This step is not necessary if you only want to phase the SNP array data. In our case, this allow us to merge the SNP array data with the UKB whole-exome sequencing data (WES) to phase the WES data, as described in the dedicated tutorial.
 
 **Requirement:**
-This step relies on two additional codes (`swaprefalt_0.0.1.tar.gz` and `liftovervcf_0.0.1.tar.gz`) that are provided as docker images [here](https://github.com/odelaneau/shapeit5/releases). Make sure to upload these docker images in your `/docker` folder on the UKB RAP using:
+This step relies on two additional codes (`swaprefalt_0.0.1.tar.gz` and `liftovervcf_0.0.1.tar.gz`) that are provided as docker images [here](https://github.com/odelaneau/shapeit/releases). Make sure to upload these docker images in your `/docker` folder on the UKB RAP using:
 
 <br>
 <div class="code-example" markdown="1">
 ```bash
 # download required docker images from our github repository
-wget https://github.com/odelaneau/shapeit5/releases/download/v1.0.0/swaprefalt_0.0.1.tar.gz
-wget https://github.com/odelaneau/shapeit5/releases/download/v1.0.0/liftovervcf_0.0.1.tar.gz
+wget https://github.com/odelaneau/shapeit/releases/download/v1.0.0/swaprefalt_0.0.1.tar.gz
+wget https://github.com/odelaneau/shapeit/releases/download/v1.0.0/liftovervcf_0.0.1.tar.gz
 
 # upload the docker images on the UKB RAP
 dx mkdir -p docker/
@@ -166,13 +166,13 @@ done
 
 ### Phasing 
 
-**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5_beta.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit5/docs/installation/docker)
+**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5_beta.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit/docs/installation/docker)
 .
 <div class="code-example" markdown="1">
 ```bash
 # Download map files
 dx mkdir -p data/shapeit_maps/
-wget https://github.com/odelaneau/shapeit5/raw/main/maps/genetic_maps.b38.tar.gz
+wget https://github.com/odelaneau/shapeit/raw/main/maps/genetic_maps.b38.tar.gz
 tar -xvzf genetic_maps.b38.tar.gz
 dx upload *.b38.gmap.gz --path="data/shapeit_maps/"
 
@@ -191,7 +191,7 @@ done
 </div>
 
 
-The full list of options for the **SHAPEIT5_phase_common** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/phase_common/).
+The full list of options for the **SHAPEIT5_phase_common** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/phase_common/).
 
 
 <br>
@@ -232,7 +232,7 @@ done
 
 
 
-The full list of options for the **SHAPEIT5_switch** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/switch/).
+The full list of options for the **SHAPEIT5_switch** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/switch/).
 
 
 

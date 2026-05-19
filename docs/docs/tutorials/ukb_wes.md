@@ -44,7 +44,7 @@ Important note: This uses some files produced as part of the UK Biobank SNP arra
 
 **1. SNP array lifting over.**
 
-To merge the SNP array with the WES, we first quality control the data and lift it over to hg38. This is described in the [*UK Biobank SNP array data* tutorial](https://odelaneau.github.io/shapeit5/docs/tutorials/ukb_snp_array/).
+To merge the SNP array with the WES, we first quality control the data and lift it over to hg38. This is described in the [*UK Biobank SNP array data* tutorial](https://odelaneau.github.io/shapeit/docs/tutorials/ukb_snp_array/).
 
 **2. Subsetting overlapping individuals.**
 
@@ -111,14 +111,14 @@ SHAPEIT5 phases common variants using the SHAPEIT5_phase_common tool. As an inpu
 We phase common variants using **SHAPEIT5_phase_common** across entire chromosomes. This phasing is then used as a scaffold to phase rare variants in chunks.
 
 
-**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5_beta.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit5/docs/installation/docker)
+**IMPORTANT**: in the following code make sure to change the shapeit5 docker image name (here `shapeit5_beta.tar.gz`) to the latest version that you've downloaded [here](https://odelaneau.github.io/shapeit/docs/installation/docker)
 
 
 <div class="code-example" markdown="1">
 ```bash
 # step1. Download map files
 dx mkdir -p data/shapeit_maps/
-wget https://github.com/odelaneau/shapeit5/raw/main/maps/genetic_maps.b38.tar.gz
+wget https://github.com/odelaneau/shapeit/raw/main/maps/genetic_maps.b38.tar.gz
 tar -xvzf genetic_maps.b38.tar.gz
 dx upload *.b38.gmap.gz --path="data/shapeit_maps/"
 
@@ -136,7 +136,7 @@ done
 ```
 </div>
 
-The full list of options for the **SHAPEIT5_phase_common** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/phase_common/).
+The full list of options for the **SHAPEIT5_phase_common** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/phase_common/).
 
 
 <br>
@@ -253,7 +253,7 @@ done
 
 
 
-The full list of options for the **SHAPEIT5_switch** command can be found [here](https://odelaneau.github.io/shapeit5/docs/documentation/switch/).
+The full list of options for the **SHAPEIT5_switch** command can be found [here](https://odelaneau.github.io/shapeit/docs/documentation/switch/).
 
 
 
