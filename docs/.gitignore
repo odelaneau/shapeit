@@ -11,5 +11,6 @@ _site
 .ruby-version
 Gemfile.lock
 node_modules
-vendor/
+/vendor/
+!_includes/vendor/
 .bundle
