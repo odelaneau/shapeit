@@ -1,6 +1,6 @@
 # Segmented HAPlotype Estimation and Imputation Tools version 5 (SHAPEIT5)
 
-[![Build](https://github.com/odelaneau/shapeit5/actions/workflows/build.yml/badge.svg)](https://github.com/odelaneau/shapeit5/actions) [![Build_Pages](https://github.com/odelaneau/shapeit5/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/odelaneau/shapeit5/actions)
+> **Note:** This repository replaces the original [odelaneau/shapeit5](https://github.com/odelaneau/shapeit5) repo, which has been repeatedly disabled by GitHub. This is now the official home for the SHAPEIT5 source code.
 
 SHAPEIT5 estimates haplotypes in large datasets, with a special focus on rare variants.
 
@@ -31,7 +31,7 @@ Hofmeister RJ, Ribeiro DM, Rubinacci S., Delaneau O. [Accurate rare variant phas
 
 Documentation, installation instructions and tutorials can be found at:
 
-[https://odelaneau.github.io/shapeit5/](https://odelaneau.github.io/shapeit5/)
+[https://odelaneau.github.io/shapeit/](https://odelaneau.github.io/shapeit/)
 
 ## License
 
