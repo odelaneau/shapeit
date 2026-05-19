@@ -1,0 +1,15 @@
+These files provide two chunkings of the human genome b38.
+
+  4cM/   - Small chunks for phase_rare (chr1-22, chrX)
+  20cM/  - Large chunks for phase_common (chr1-22, chrX)
+
+Each file contains 4 columns:
+1. Chunk index
+2. Chromosome/contig ID
+3. Chunk coordinates including right and left buffers. These overlap with flanking chunks. 
+4. Chunk coordinates NOT including right and left buffers. These do NOT overlap with flanking chunks.
+
+Notes:
+* Feed --region of phase_common with (3)
+* Feed --scaffold-region of phase_rare with (3) 
+* Feed --input-region of phase_rare with (4)
