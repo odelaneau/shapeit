@@ -23,6 +23,13 @@ The three hot paths are:
   done.
 - **B8 — DONE (bit-exact).** The homozygous mismatch `if (ag!=ah)` is now branchless
   via `_emit[2] = {splat(1.0f), splat(mismatch)}` indexed by `ag!=ah`.
+- **B1(a) — DONE (bit-exact).** Added `bitmatrix::row_ptr()`; each kernel hoists a
+  `__restrict` row pointer out of the `k`-loop and reads bits via `hget(hrow, k)`,
+  so the invariant row base is computed once instead of re-derived every iteration.
+- **B4 (Alpha) — DONE (bit-exact).** `forward()` replaces the per-segment
+  `Alpha[seg] = prob` deep copy with an O(1) `prob.swap(Alpha[seg])`; the
+  `AlphaMissing` copy is reordered before the swap. (The `AlphaMissing` copy itself
+  is untouched — that's C2.)
 - **`simd8<T>` refactor — DONE.** After A1/B2/B8 the header had grown to ~780 lines
   of duplicated `if constexpr (float)/else` kernels. Introduced a header-local
   `simd8<T>` value type ("8 lanes of `T`": `__m256` for float, a `__m256d` pair for
@@ -93,7 +100,15 @@ apparent `AlphaSumMissing[1]`→`[4]` indexing typo in the old double `IMPUTE`.
 
 ## B. Runtime / speed
 
-### B1. Kill the aliasing-blocked reloads in `Hvar.get()` in the innermost HMM loop
+### B1. Kill the aliasing-blocked reloads in `Hvar.get()` in the innermost HMM loop — ✅ (a) DONE
+- **As implemented (variant a, bit-exact):** added `bitmatrix::row_ptr(row)` and, in
+  each of the 7 kernels that read `Hvar`, hoisted `const unsigned char * __restrict
+  hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);` out of the `k`-loop.
+  Per-`k` access is now `hget(hrow, k)` = `(hrow[k>>3] >> (7-(k&7))) & 1`, identical
+  bits to the old `get()`. The `__restrict` promises the `float` store doesn't touch
+  the matrix, so the invariant `row*(n_cols>>3)` is computed once and the shared byte
+  survives across the unrolled `k`'s. Variant (b) (byte expansion) not done.
+- **Original problem/analysis below (for reference).**
 - **Where:** every kernel in `haplotype_segment_single.h` /
   `_double.h` calls `Hvar.get(curr_rel_locus+curr_rel_locus_offset, k)` inside the
   `k`-loop (e.g. lines 128, 152, 174, 199, 285, 419).
@@ -170,7 +185,16 @@ apparent `AlphaSumMissing[1]`→`[4]` indexing typo in the old double `IMPUTE`.
 - **Impact:** Medium (scales with rare-allele density and iteration count).
   **Effort:** Low–Medium. **Risk:** Low.
 
-### B4. Eliminate full-vector copies when storing Alpha / AlphaMissing
+### B4. Eliminate full-vector copies when storing Alpha / AlphaMissing — ✅ (Alpha) DONE
+- **As implemented (bit-exact):** the segment-boundary `Alpha[seg] = prob` deep copy
+  is replaced by an O(1) `prob.swap(Alpha[seg])` in `forward()`. This is safe because
+  the forward recursion advances across segments through the reduced `probSumK`
+  (`SUMK`→`COLLAPSE`), never re-reading a stored `Alpha`; the swapped-in stale `prob`
+  is fully overwritten by the next segment's `COLLAPSE`. The per-missing-site
+  `AlphaMissing[m] = prob` copy is now done **before** the swap (else it would read the
+  swapped-out buffer). The `AlphaMissing` copy itself is **not** eliminated — that's
+  the C2 reduction. Values stored are identical → bit-exact.
+- **Original problem/proposal below (for reference).**
 - **Where:** `haplotype_segment_single.cpp:122-128`:
   `Alpha[...] = prob;`, `AlphaSum[...] = probSumH;`, and
   `AlphaMissing[curr_rel_missing] = prob;`.
@@ -260,10 +284,25 @@ apparent `AlphaSumMissing[1]`→`[4]` indexing typo in the old double `IMPUTE`.
 - **Impact:** Low–Medium (per-call stall × call count). **Effort:** Low.
   **Risk:** Low–Medium (validate switch-error).
 
-> **Compiler check (GCC 11.4, `-O3 -mavx2 -mfma`):** all of B1, B2, B8–B10 were
+### B11. Restructure `TRANS_HAP` to load `prob[k*8]` once
+- **Where:** `haplotype_segment.h::TRANS_HAP` — loops `h1` (outer, 8) over `k`
+  (inner, K), reloading `_beta = prob[k*HAP_NUMBER]` for every `h1`.
+- **Problem:** The whole `prob` array is read **8×** (once per `h1`). Called once per
+  segment boundary in `backward()`.
+- **Proposal:** Interchange to `k` outer: load `_beta` once, then FMA into 8
+  accumulators `acc[h1]` with a broadcast of `Alpha[…][k*8+h1]*fact1+fact2`. Reads
+  `prob` K times instead of 8K. **Reorders sums → not bit-exact** (Tier 2).
+- **Impact:** Medium (memory traffic on the transition path). **Effort:** Medium.
+  **Risk:** Medium (validate switch-error).
+- **Prior attempt:** implemented once (k-outer + `fmadd`) then reverted — the
+  benchmark showed no measurable gain, but that measurement is suspect (possible
+  benchmark error). `TRANS_HAP` is per-segment-boundary (not per-locus) and `prob`
+  is L1-resident, so the win may genuinely be small; re-measure before re-committing.
+
+> **Compiler check (GCC 11.4, `-O3 -mavx2 -mfma`):** all of B1, B2, B8–B11 were
 > confirmed **not** already performed by the compiler (the per-iteration `imulq` +
 > reloads for B1; the branch for B8; the `vdivsd` for B9; single-accumulator loops
-> with no unroll for B2; no reassociation for B10 — GCC cannot do
+> with no unroll for B2; no reassociation/interchange for B10/B11 — GCC cannot do
 > these without `-ffast-math`, which the module avoids for underflow detection). Only
 > B7 is already handled by the compiler.
 
@@ -367,9 +406,11 @@ apparent `AlphaSumMissing[1]`→`[4]` indexing typo in the old double `IMPUTE`.
 | ✅ | A1 — template-merge single/double HMM (+ `simd8<T>` unification) | Big consolidation | — | Med | Med |
 | ✅ | B2(a) — SIMD unroll to break the FMA dep chain | High speed | High | Med | Med |
 | 1 | B9 — cached `M.ed/M.ee` mismatch member (bit-exact) | Low-Med speed | Low-Med | Low | Low |
-| 2 | B1 — cache invariant base / expand bytes (bit-exact) | Low-Med speed | Low-Med | Low-Med | Low-Med |
-| 3 | C1/B4 — Alpha in-place + pooled buffers | High memory + speed | Med | Med | Med |
+| ✅ | B1(a) — hoist `__restrict` row ptr out of the k-loop (bit-exact) | Low-Med speed | Low-Med | Low-Med | Low-Med |
+| ✅ | B4 — Alpha stored via O(1) swap, not deep copy (bit-exact) | High memory + speed | Med | Med | Med |
+| 3 | C1 — Alpha compact type / pooled per-worker buffers | High memory | — | Med-High | Med |
 | 4 | B2(b)/D2 — AVX-512 (`__m512d` double drop-in; float hap-pair) | Med-High speed | Med-High | Low (double) / Med (float) | Med |
+| 5 | B11 — restructure `TRANS_HAP` (load prob once) | Medium speed | Med | Med | Med |
 | 6 | D1 — LTO + `-funroll-loops`, `-O3` static | Free-ish speed | Low-Med | Low | Low |
 | 7 | C2 — reduce AlphaMissing storage | Memory (high-miss data) | — | Med | Med |
 | 8 | B3 — cache transition probs | Speed | Med | Low | Low |
@@ -378,7 +419,7 @@ apparent `AlphaSumMissing[1]`→`[4]` indexing typo in the old double `IMPUTE`.
 | 11 | C3/C4 — shrink index & DProbs arrays | Memory | Low | Low-Med | Low |
 | 12 | A2/A3/B7 — dedup + dead-code cleanup | Maintainability | — | Low | Low |
 
-> **Bit-exact (no regression check needed):** B8, B9, B1. **Numeric-affecting** (must
+> **Bit-exact (no regression check needed):** B8, B9, B1, B4. **Numeric-affecting** (must
 > be validated against a switch-error regression + underflow-recovery path): A1,
-> B2–B4, B10, C1–C4, D1 — the module deliberately trades precision for speed and
+> B2, B3, B10, B11, C1–C4, D1 — the module deliberately trades precision for speed and
 > relies on exact `isnan`/`isinf`/denormal underflow detection.

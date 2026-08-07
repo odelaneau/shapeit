@@ -74,6 +74,14 @@ T hsum8(const aligned_vector32<T> & a) {
 	return a[0] + a[1] + a[2] + a[3] + a[4] + a[5] + a[6] + a[7];
 }
 
+//B1: bit lookup on a pre-hoisted matrix row pointer. Identical result to
+//bitmatrix::get(row, col) with col=k, but the row base is computed once by the
+//caller. The `__restrict` on the caller's row pointer lets the compiler keep the
+//shared byte across the unrolled k's despite the float store in the same loop.
+static inline bool hget(const unsigned char * __restrict r, unsigned int k) {
+	return (r[k>>3] >> (7 - (k&7))) & 1;
+}
+
 template <typename T>
 class haplotype_segment {
 private:
@@ -164,9 +172,10 @@ public:
 template <typename T> inline
 void haplotype_segment<T>::INIT_HOM() {
 	bool ag = VAR_GET_HAP0(MOD2(curr_abs_locus), G->Variants[DIV2(curr_abs_locus)]);
+	const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 	simd8<T> _sum = simd8<T>::splat(0.0f);
 	for(int k = 0, i = 0 ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-		bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+		bool ah = hget(hrow, k);
 		simd8<T> _prob = simd8<T>::splat((ag==ah)?1.0f:M.ed/M.ee);
 		_sum = _sum + _prob;
 		_prob.store(&prob[i]);
@@ -179,6 +188,7 @@ template <typename T> inline
 bool haplotype_segment<T>::RUN_HOM(char rare_allele) {
 	bool ag = VAR_GET_HAP0(MOD2(curr_abs_locus), G->Variants[DIV2(curr_abs_locus)]);
 	if (rare_allele < 0 || ag == rare_allele) {
+		const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 		simd8<T> _sum0 = simd8<T>::splat(0.0f), _sum1 = simd8<T>::splat(0.0f);
 		simd8<T> _sum2 = simd8<T>::splat(0.0f), _sum3 = simd8<T>::splat(0.0f);
 		simd8<T> _tFreq = simd8<T>::load(&probSumH[0]) * simd8<T>::splat(yt / (n_cond_haps * probSumT));
@@ -186,10 +196,10 @@ bool haplotype_segment<T>::RUN_HOM(char rare_allele) {
 		simd8<T> _emit[2] = { simd8<T>::splat(1.0f), simd8<T>::splat(M.ed/M.ee) };
 		unsigned int n4 = n_cond_haps & ~3u, k = 0; int i = 0;
 		for( ; k < n4 ; k += 4, i += 4*HAP_NUMBER) {
-			bool ah0 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+0);
-			bool ah1 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+1);
-			bool ah2 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+2);
-			bool ah3 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+3);
+			bool ah0 = hget(hrow, k+0);
+			bool ah1 = hget(hrow, k+1);
+			bool ah2 = hget(hrow, k+2);
+			bool ah3 = hget(hrow, k+3);
 			simd8<T> _p0 = fmadd(simd8<T>::load(&prob[i+0*HAP_NUMBER]), _nt, _tFreq) * _emit[ag!=ah0];
 			simd8<T> _p1 = fmadd(simd8<T>::load(&prob[i+1*HAP_NUMBER]), _nt, _tFreq) * _emit[ag!=ah1];
 			simd8<T> _p2 = fmadd(simd8<T>::load(&prob[i+2*HAP_NUMBER]), _nt, _tFreq) * _emit[ag!=ah2];
@@ -199,7 +209,7 @@ bool haplotype_segment<T>::RUN_HOM(char rare_allele) {
 			_p2.store(&prob[i+2*HAP_NUMBER]); _p3.store(&prob[i+3*HAP_NUMBER]);
 		}
 		for( ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-			bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+			bool ah = hget(hrow, k);
 			simd8<T> _p = fmadd(simd8<T>::load(&prob[i]), _nt, _tFreq) * _emit[ag!=ah];
 			_sum0 = _sum0 + _p;
 			_p.store(&prob[i]);
@@ -215,6 +225,7 @@ bool haplotype_segment<T>::RUN_HOM(char rare_allele) {
 template <typename T> inline
 void haplotype_segment<T>::COLLAPSE_HOM() {
 	bool ag = VAR_GET_HAP0(MOD2(curr_abs_locus), G->Variants[DIV2(curr_abs_locus)]);
+	const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 	simd8<T> _sum0 = simd8<T>::splat(0.0f), _sum1 = simd8<T>::splat(0.0f);
 	simd8<T> _sum2 = simd8<T>::splat(0.0f), _sum3 = simd8<T>::splat(0.0f);
 	simd8<T> _tFreq = simd8<T>::splat(yt / n_cond_haps);						//Check divide by probSumT here!
@@ -222,10 +233,10 @@ void haplotype_segment<T>::COLLAPSE_HOM() {
 	simd8<T> _emit[2] = { simd8<T>::splat(1.0f), simd8<T>::splat(M.ed/M.ee) };
 	unsigned int n4 = n_cond_haps & ~3u, k = 0; int i = 0;
 	for( ; k < n4 ; k += 4, i += 4*HAP_NUMBER) {
-		bool ah0 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+0);
-		bool ah1 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+1);
-		bool ah2 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+2);
-		bool ah3 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+3);
+		bool ah0 = hget(hrow, k+0);
+		bool ah1 = hget(hrow, k+1);
+		bool ah2 = hget(hrow, k+2);
+		bool ah3 = hget(hrow, k+3);
 		simd8<T> _p0 = fmadd(simd8<T>::splat(probSumK[k+0]), _nt, _tFreq) * _emit[ag!=ah0];
 		simd8<T> _p1 = fmadd(simd8<T>::splat(probSumK[k+1]), _nt, _tFreq) * _emit[ag!=ah1];
 		simd8<T> _p2 = fmadd(simd8<T>::splat(probSumK[k+2]), _nt, _tFreq) * _emit[ag!=ah2];
@@ -235,7 +246,7 @@ void haplotype_segment<T>::COLLAPSE_HOM() {
 		_p2.store(&prob[i+2*HAP_NUMBER]); _p3.store(&prob[i+3*HAP_NUMBER]);
 	}
 	for( ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-		bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+		bool ah = hget(hrow, k);
 		simd8<T> _p = fmadd(simd8<T>::splat(probSumK[k]), _nt, _tFreq) * _emit[ag!=ah];
 		_sum0 = _sum0 + _p;
 		_p.store(&prob[i]);
@@ -256,10 +267,11 @@ void haplotype_segment<T>::INIT_AMB() {
 		g0[h] = HAP_GET(amb_code,h)?M.ed/M.ee:1.0f;
 		g1[h] = HAP_GET(amb_code,h)?1.0f:M.ed/M.ee;
 	}
+	const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 	simd8<T> _emit[2] = { simd8<T>::loadu(&g0[0]), simd8<T>::loadu(&g1[0]) };
 	simd8<T> _sum = simd8<T>::splat(0.0f);
 	for(int k = 0, i = 0 ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-		bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+		bool ah = hget(hrow, k);
 		simd8<T> _prob = _emit[ah];
 		_sum = _sum + _prob;
 		_prob.store(&prob[i]);
@@ -280,12 +292,13 @@ void haplotype_segment<T>::RUN_AMB() {
 	simd8<T> _tFreq = simd8<T>::load(&probSumH[0]) * simd8<T>::splat(yt / (n_cond_haps * probSumT));
 	simd8<T> _nt = simd8<T>::splat(nt / probSumT);
 	simd8<T> _emit[2] = { simd8<T>::loadu(&g0[0]), simd8<T>::loadu(&g1[0]) };
+	const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 	unsigned int n4 = n_cond_haps & ~3u, k = 0; int i = 0;
 	for( ; k < n4 ; k += 4, i += 4*HAP_NUMBER) {
-		bool ah0 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+0);
-		bool ah1 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+1);
-		bool ah2 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+2);
-		bool ah3 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+3);
+		bool ah0 = hget(hrow, k+0);
+		bool ah1 = hget(hrow, k+1);
+		bool ah2 = hget(hrow, k+2);
+		bool ah3 = hget(hrow, k+3);
 		simd8<T> _p0 = fmadd(simd8<T>::load(&prob[i+0*HAP_NUMBER]), _nt, _tFreq) * _emit[ah0];
 		simd8<T> _p1 = fmadd(simd8<T>::load(&prob[i+1*HAP_NUMBER]), _nt, _tFreq) * _emit[ah1];
 		simd8<T> _p2 = fmadd(simd8<T>::load(&prob[i+2*HAP_NUMBER]), _nt, _tFreq) * _emit[ah2];
@@ -295,7 +308,7 @@ void haplotype_segment<T>::RUN_AMB() {
 		_p2.store(&prob[i+2*HAP_NUMBER]); _p3.store(&prob[i+3*HAP_NUMBER]);
 	}
 	for( ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-		bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+		bool ah = hget(hrow, k);
 		simd8<T> _p = fmadd(simd8<T>::load(&prob[i]), _nt, _tFreq) * _emit[ah];
 		_sum0 = _sum0 + _p;
 		_p.store(&prob[i]);
@@ -317,12 +330,13 @@ void haplotype_segment<T>::COLLAPSE_AMB() {
 	simd8<T> _tFreq = simd8<T>::splat(yt / n_cond_haps);
 	simd8<T> _nt = simd8<T>::splat(nt / probSumT);
 	simd8<T> _emit[2] = { simd8<T>::loadu(&g0[0]), simd8<T>::loadu(&g1[0]) };
+	const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 	unsigned int n4 = n_cond_haps & ~3u, k = 0; int i = 0;
 	for( ; k < n4 ; k += 4, i += 4*HAP_NUMBER) {
-		bool ah0 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+0);
-		bool ah1 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+1);
-		bool ah2 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+2);
-		bool ah3 = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k+3);
+		bool ah0 = hget(hrow, k+0);
+		bool ah1 = hget(hrow, k+1);
+		bool ah2 = hget(hrow, k+2);
+		bool ah3 = hget(hrow, k+3);
 		simd8<T> _p0 = fmadd(simd8<T>::splat(probSumK[k+0]), _nt, _tFreq) * _emit[ah0];
 		simd8<T> _p1 = fmadd(simd8<T>::splat(probSumK[k+1]), _nt, _tFreq) * _emit[ah1];
 		simd8<T> _p2 = fmadd(simd8<T>::splat(probSumK[k+2]), _nt, _tFreq) * _emit[ah2];
@@ -332,7 +346,7 @@ void haplotype_segment<T>::COLLAPSE_AMB() {
 		_p2.store(&prob[i+2*HAP_NUMBER]); _p3.store(&prob[i+3*HAP_NUMBER]);
 	}
 	for( ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-		bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+		bool ah = hget(hrow, k);
 		simd8<T> _p = fmadd(simd8<T>::splat(probSumK[k]), _nt, _tFreq) * _emit[ah];
 		_sum0 = _sum0 + _p;
 		_p.store(&prob[i]);
@@ -479,10 +493,11 @@ bool haplotype_segment<T>::TRANS_DIP_ADD() {
 
 template <typename T> inline
 void haplotype_segment<T>::IMPUTE(std::vector < float > & missing_probabilities) {
+	const unsigned char * __restrict hrow = Hvar.row_ptr(curr_rel_locus+curr_rel_locus_offset);
 	simd8<T> _sumA[2] = { simd8<T>::splat(0.0f), simd8<T>::splat(0.0f) };
 	simd8<T> _alphaSum = simd8<T>::splat(1.0f) / simd8<T>::load(&AlphaSumMissing[curr_rel_missing][0]);
 	for(int k = 0, i = 0 ; k != n_cond_haps ; ++k, i += HAP_NUMBER) {
-		bool ah = Hvar.get(curr_rel_locus+curr_rel_locus_offset, k);
+		bool ah = hget(hrow, k);
 		simd8<T> _prob = simd8<T>::load(&prob[i]);
 		simd8<T> _alpha = simd8<T>::load(&AlphaMissing[curr_rel_missing][i]);
 		_sumA[ah] = _sumA[ah] + (_alpha * _alphaSum) * _prob;

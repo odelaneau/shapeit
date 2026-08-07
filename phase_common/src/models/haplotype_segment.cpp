@@ -120,17 +120,23 @@ void haplotype_segment<T>::forward() {
 		}
 		prev_abs_locus=update_prev_locus?curr_abs_locus:prev_abs_locus;
 
-		if (curr_segment_locus == (G->Lengths[curr_segment_index] - 1)) SUMK();
-		if (curr_segment_locus == G->Lengths[curr_segment_index] - 1) {
-			Alpha[curr_segment_index - segment_first] = prob;
-			AlphaSum[curr_segment_index - segment_first] = probSumH;
-			AlphaSumSum[curr_segment_index - segment_first] = probSumT;
-			AlphaLocus[curr_segment_index - segment_first] = prev_abs_locus;
-		}
+		bool at_boundary = (curr_segment_locus == G->Lengths[curr_segment_index] - 1);
+		if (at_boundary) SUMK();
+		//B4: copy the per-missing-site vector from `prob` BEFORE the boundary swap
+		//below, which leaves the current forward vector in Alpha[seg], not `prob`.
 		if (mis) {
 			AlphaMissing[curr_rel_missing] = prob;
 			AlphaSumMissing[curr_rel_missing] = probSumH;
 			curr_abs_missing ++;
+		}
+		if (at_boundary) {
+			AlphaSum[curr_segment_index - segment_first] = probSumH;
+			AlphaSumSum[curr_segment_index - segment_first] = probSumT;
+			AlphaLocus[curr_segment_index - segment_first] = prev_abs_locus;
+			//B4: O(1) buffer swap instead of deep-copying prob into Alpha[seg].
+			//The next segment's COLLAPSE reseeds `prob` entirely from probSumK,
+			//so the stale contents swapped into `prob` are never read.
+			prob.swap(Alpha[curr_segment_index - segment_first]);
 		}
 
 		curr_segment_locus ++;

@@ -47,6 +47,7 @@ public:
 	void set(unsigned int row, unsigned int col, unsigned char bit);
 	unsigned char get(unsigned int row, unsigned int col);
 	unsigned char getByte(unsigned int row, unsigned int col);
+	const unsigned char * row_ptr(unsigned int row);
 
 	void transpose(bitmatrix & BM, unsigned int _max_row, unsigned int _max_col);
 	void transpose(bitmatrix & BM);
@@ -70,6 +71,14 @@ unsigned char bitmatrix::get(unsigned int row, unsigned int col) {
 inline
 unsigned char bitmatrix::getByte(unsigned int row, unsigned int col) {
 	return bytes[((unsigned long)row) * (n_cols>>3) +  (col>>3)];
+}
+
+//B1: base of a matrix row. Callers hoist this out of the k-loop so the invariant
+//row*(n_cols>>3) is computed once (the float store in the same loop would otherwise
+//block the compiler from hoisting it, since unsigned char* may alias any type).
+inline
+const unsigned char * bitmatrix::row_ptr(unsigned int row) {
+	return bytes + ((unsigned long)row) * (n_cols>>3);
 }
 
 
