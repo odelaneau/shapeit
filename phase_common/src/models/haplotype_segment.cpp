@@ -20,11 +20,12 @@
  * SOFTWARE.
  ******************************************************************************/
 
-#include <models/haplotype_segment_double.h>
+#include <models/haplotype_segment.h>
 
 using namespace std;
 
-haplotype_segment_double::haplotype_segment_double(genotype * _G, bitmatrix & H, vector < unsigned int > & idxH, window & W, hmm_parameters & _M) : G(_G), M(_M){
+template <typename T>
+haplotype_segment<T>::haplotype_segment(genotype * _G, bitmatrix & H, vector < unsigned int > & idxH, window & W, hmm_parameters & _M) : G(_G), M(_M){
 	segment_first = W.start_segment;
 	segment_last = W.stop_segment;
 	locus_first = W.start_locus;
@@ -39,16 +40,16 @@ haplotype_segment_double::haplotype_segment_double(genotype * _G, bitmatrix & H,
 	n_missing = missing_last - missing_first + 1;
 
 	probSumT = 0.0f;
-	prob = aligned_vector32 < double > (HAP_NUMBER * n_cond_haps, 0.0f);
-	probSumH = aligned_vector32 < double > (HAP_NUMBER, 0.0f);
-	probSumK = aligned_vector32 < double > (n_cond_haps, 0.0f);
-	Alpha = vector < aligned_vector32 < double > > (segment_last - segment_first + 1, aligned_vector32 < double > (HAP_NUMBER * n_cond_haps, 0.0f));
+	prob = aligned_vector32 < T > (HAP_NUMBER * n_cond_haps, 0.0f);
+	probSumH = aligned_vector32 < T > (HAP_NUMBER, 0.0f);
+	probSumK = aligned_vector32 < T > (n_cond_haps, 0.0f);
+	Alpha = vector < aligned_vector32 < T > > (segment_last - segment_first + 1, aligned_vector32 < T > (HAP_NUMBER * n_cond_haps, 0.0f));
 	AlphaLocus = vector < int > (segment_last - segment_first + 1, 0);
-	AlphaSum = vector < aligned_vector32 < double > > (segment_last - segment_first + 1, aligned_vector32 < double > (HAP_NUMBER, 0.0f));
-	AlphaSumSum = aligned_vector32 < double > (segment_last - segment_first + 1, 0.0);
+	AlphaSum = vector < aligned_vector32 < T > > (segment_last - segment_first + 1, aligned_vector32 < T > (HAP_NUMBER, 0.0f));
+	AlphaSumSum = aligned_vector32 < T > (segment_last - segment_first + 1, 0.0);
 	if (n_missing > 0) {
-		AlphaMissing = vector < aligned_vector32 < double > > (n_missing, aligned_vector32 < double > (HAP_NUMBER * n_cond_haps, 0.0f));
-		AlphaSumMissing = vector < aligned_vector32 < double > > (n_missing, aligned_vector32 < double > (HAP_NUMBER, 0.0f));
+		AlphaMissing = vector < aligned_vector32 < T > > (n_missing, aligned_vector32 < T > (HAP_NUMBER * n_cond_haps, 0.0f));
+		AlphaSumMissing = vector < aligned_vector32 < T > > (n_missing, aligned_vector32 < T > (HAP_NUMBER, 0.0f));
 	}
 	//Cache efficient data transfer for conditioning haplotypes
 	curr_rel_locus_offset = Hhap.subset(H, idxH, locus_first, locus_last);
@@ -56,7 +57,8 @@ haplotype_segment_double::haplotype_segment_double(genotype * _G, bitmatrix & H,
 	Hhap.transpose(Hvar);
 }
 
-haplotype_segment_double::~haplotype_segment_double() {
+template <typename T>
+haplotype_segment<T>::~haplotype_segment() {
 	G = NULL;
 	segment_first = 0;
 	segment_last = 0;
@@ -84,7 +86,8 @@ haplotype_segment_double::~haplotype_segment_double() {
 	AlphaSumMissing.clear();
 }
 
-void haplotype_segment_double::forward() {
+template <typename T>
+void haplotype_segment<T>::forward() {
 	curr_segment_index = segment_first;
 	curr_segment_locus = 0;
 	curr_abs_ambiguous = ambiguous_first;
@@ -139,7 +142,8 @@ void haplotype_segment_double::forward() {
 	}
 }
 
-int haplotype_segment_double::backward(vector < double > & transition_probabilities, vector < float > & missing_probabilities) {
+template <typename T>
+int haplotype_segment<T>::backward(vector < double > & transition_probabilities, vector < float > & missing_probabilities) {
 	int n_underflow_recovered = 0;
 	curr_segment_index = segment_last;
 	curr_segment_locus = G->Lengths[segment_last] - 1;
@@ -198,7 +202,8 @@ int haplotype_segment_double::backward(vector < double > & transition_probabilit
 	return n_underflow_recovered;
 }
 
-void haplotype_segment_double::SET_FIRST_TRANS(vector < double > & transition_probabilities) {
+template <typename T>
+void haplotype_segment<T>::SET_FIRST_TRANS(vector < double > & transition_probabilities) {
 	double scale = 1.0f / probSumT, scaleDip = 0.0f;
 	unsigned int n_transitions = G->countDiplotypes(G->Diplotypes[0]);
 	vector < double > cprobs = vector < double > (n_transitions, 0.0);
@@ -212,7 +217,8 @@ void haplotype_segment_double::SET_FIRST_TRANS(vector < double > & transition_pr
 	for (unsigned int t = 0 ; t < n_transitions ; t ++) transition_probabilities[t] = cprobs[t] * scaleDip;
 }
 
-int haplotype_segment_double::SET_OTHER_TRANS(vector < double > & transition_probabilities) {
+template <typename T>
+int haplotype_segment<T>::SET_OTHER_TRANS(vector < double > & transition_probabilities) {
 	int underflow_recovered = 0;
 	if (TRANS_HAP()) return -1;
 	if (TRANS_DIP_MULT()) {
@@ -228,3 +234,6 @@ int haplotype_segment_double::SET_OTHER_TRANS(vector < double > & transition_pro
 	curr_abs_transition --;
 	return underflow_recovered;
 }
+
+template class haplotype_segment<float>;
+template class haplotype_segment<double>;
