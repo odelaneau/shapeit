@@ -1,7 +1,6 @@
 #COMPILER MODE C++17
 CXX=g++ -std=c++20
 
-
 #create folders
 dummy_build_folder_bin := $(shell mkdir -p bin)
 dummy_build_folder_obj := $(shell mkdir -p obj)
@@ -33,6 +32,24 @@ NAME=$(shell basename $(CURDIR))
 BFILE=bin/$(NAME)
 EXEFILE=bin/$(NAME)_static
 
+# Apple Silicon / macOS native build (clang + Homebrew htslib/boost)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+CXX=clang++ -std=c++20
+CXXFLAG=-O3 -march=native
+CXXFLAG+= -D__COMMIT_ID__=\"$(COMMIT_VERS)\"
+CXXFLAG+= -D__COMMIT_DATE__=\"$(COMMIT_DATE)\"
+LDFLAG=-O3 -L$(shell brew --prefix)/lib
+HTSSRC=$(shell brew --prefix)/opt/htslib
+HTSLIB_INC=$(HTSSRC)/include
+HTSLIB_LIB=$(HTSSRC)/lib/libhts.a
+BOOST_INC=$(shell brew --prefix)/opt/boost/include
+BOOST_LIB_IO=$(shell brew --prefix)/opt/boost/lib/libboost_iostreams.a
+BOOST_LIB_PO=$(shell brew --prefix)/opt/boost/lib/libboost_program_options.a
+BOOST_LIB_SE=$(shell brew --prefix)/opt/boost/lib/libboost_serialization.a
+macos: $(BFILE)
+endif
+
 # Only search for libraries if goals != clean
 ifeq (,$(filter clean,$(MAKECMDGOALS)))
 
@@ -47,7 +64,7 @@ ifeq (,$(filter clean,$(MAKECMDGOALS)))
 ##########################################
 # Boost libraries for static compilation #
 ##########################################
-BOOST_INC=/usr/include
+BOOST_INC ?= /usr/include
 
 # If not set by user command, search for it
 BOOST_LIB_IO?=$(shell whereis libboost_iostreams | grep -o '\S*\.a\b')
@@ -158,7 +175,11 @@ dnanexus: HTSLIB_LIB=/usr/local/lib/libhts.a
 dnanexus: $(BFILE)
 
 #COMPILATION RULES
+ifeq ($(UNAME_S),Darwin)
+all: macos
+else
 all: desktop
+endif
 
 $(BFILE): $(OFILE)
 	$(CXX) $(LDFLAG) $^ -o $@ $(HTSLIB_LIB) $(BOOST_LIB_IO) $(BOOST_LIB_PO) $(DYN_LIBS)
