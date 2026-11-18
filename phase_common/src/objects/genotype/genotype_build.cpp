@@ -34,6 +34,7 @@ uint32_t genotype::setHetsAsMissing() {
 	uint32_t nreset = 0;
 	for (uint32_t v = 0 ; v < n_variants ; v++) {
 		if (VAR_GET_AMB(MOD2(v), Variants[DIV2(v)])) {
+			VAR_SET_HOM(MOD2(v), Variants[DIV2(v)]);
 			VAR_SET_MIS(MOD2(v), Variants[DIV2(v)]);
 			nreset ++;
 		}
