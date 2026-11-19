@@ -15,6 +15,7 @@ Version 5.1.2 is now available [here] (https://github.com/odelaneau/shapeit/rele
 	* NEON kernels give comparable performance to AVX2 on Linux and ~10x the speed of the scalar code with compiler auto-vectorization on ARM
 	* Native arm64 build is ~2.5x faster than the x86_64 binaries run under Rosetta 2, and removes the Rosetta 2 dependency (Rosetta 2 support for Intel apps ends with macOS 27 / macOS 28)
 	* Conda packaging: bioconda recipe in `conda/recipe` builds shapeit5 5.1.2 for linux-64 and osx-arm64 (osx-64 skipped, Intel Macs deprecated) — PR bioconda/bioconda-recipes#71774
+	* Conda osx-arm64 build 1: the build 0 binary was killed (SIGKILL) at launch because conda's in-place prefix replacement invalidated the code signature. Fixed by keeping the build prefix out of the binary (`-fmacro-prefix-map`), follow-up PR bioconda/bioconda-recipes#71894
 
 ## v5.1.1
 	* Bugfix of a nasty segfault, thanks to Ami Williams (23andMe).
